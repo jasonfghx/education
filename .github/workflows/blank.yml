@@ -1,36 +1,42 @@
-# This is a basic workflow to help you get started with Actions
+name: Create CSV
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  schedule:
+    # 每天 UTC 01:40
+    # = 台灣時間 09:40
+    - cron: "40 1 * * *"
 
-  # Allows you to run this workflow manually from the Actions tab
+  # 允許手動執行，方便測試
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  create-csv:
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      # 1. 把 repository 的程式碼抓下來
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      # 2. 產生 CSV
+      - name: Create CSV file
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          echo "time" > current_time.csv
+          date -u +"%Y-%m-%d %H:%M:%S UTC" >> current_time.csv
+
+      # 3. 查看產生的檔案
+      - name: Show CSV
+        run: |
+          cat current_time.csv
+
+      # 4. 把 CSV commit 回 repository
+      - name: Commit CSV
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add current_time.csv
+
+          git diff --cached --quiet || git commit -m "Update current time CSV"
+
+          git push
